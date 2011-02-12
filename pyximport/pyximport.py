@@ -51,6 +51,7 @@ import sys
 import os
 import glob
 import imp
+import fnmatch
 
 mod_name = "pyximport"
 
@@ -61,6 +62,8 @@ PYXDEP_EXT = ".pyxdep"
 PYXBLD_EXT = ".pyxbld"
 
 DEBUG_IMPORT = False
+
+pyimport_modules = []
 
 # Performance problem: for every PYX file that is imported, we will 
 # invoke the whole distutils infrastructure even if the module is 
@@ -268,6 +271,16 @@ class PyImporter(PyxImporter):
         if fullname in self.blocked_modules:
             # prevent infinite recursion
             return None
+
+        if len(pyimport_modules):
+            exists = False
+            for m in pyimport_modules:
+                if fnmatch.fnmatch(fullname, m):
+                    exists = True
+                    break
+            if not exists:
+                return None
+
         if DEBUG_IMPORT:
             print("trying import of module", fullname)
         if fullname in self.uncompilable_modules:
